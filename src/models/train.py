@@ -1,5 +1,8 @@
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
+from sklearn.linear_model import LinearRegression
+from xgboost import XGBRegressor
+import matplotlib.pyplot as plt
 
 
 df = pd.read_csv(
@@ -64,3 +67,90 @@ baseline_mae = mean_absolute_error(
 
 print("\nNaive Weekly Baseline")
 print(f"MAE: {baseline_mae:.3f}")
+
+
+## ---- linear regression ----
+# Train Linear Regression
+lr_model = LinearRegression()
+
+lr_model.fit(X_train, y_train)
+
+# Predict
+lr_pred = lr_model.predict(X_test)
+
+# Evaluate
+lr_mae = mean_absolute_error(
+    y_test,
+    lr_pred
+)
+
+print("\nLinear Regression")
+print(f"MAE: {lr_mae:.3f}")
+
+
+
+xgb_model = XGBRegressor(
+    n_estimators=300,
+    learning_rate=0.05,
+    max_depth=4,
+    random_state=42
+)
+
+# Train
+xgb_model.fit(X_train, y_train)
+
+# Predict
+xgb_pred = xgb_model.predict(X_test)
+
+# Evaluate
+xgb_mae = mean_absolute_error(
+    y_test,
+    xgb_pred
+)
+
+print("\nXGBoost")
+print(f"MAE: {xgb_mae:.3f}")
+
+
+print("\nModel Comparison")
+print(f"Naive Weekly Baseline: {baseline_mae:.3f}")
+print(f"Linear Regression:     {lr_mae:.3f}")
+print(f"XGBoost:               {xgb_mae:.3f}")
+
+## ---- plot ----
+plt.figure(figsize=(14, 6))
+
+plt.plot(
+    test_df["datum"],
+    y_test,
+    label="Actual",
+)
+
+plt.plot(
+    test_df["datum"],
+    baseline_pred,
+    label="Weekly Baseline",
+    alpha=0.7,
+)
+
+plt.plot(
+    test_df["datum"],
+    lr_pred,
+    label="Linear Regression",
+    alpha=0.8,
+)
+
+plt.plot(
+    test_df["datum"],
+    xgb_pred,
+    label="XGBoost",
+    alpha=0.8,
+)
+
+plt.xlabel("Date")
+plt.ylabel("Demand")
+plt.title("Actual vs Predicted Demand")
+plt.legend()
+
+plt.tight_layout()
+plt.show()
