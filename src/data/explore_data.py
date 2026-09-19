@@ -175,3 +175,8 @@ outliers = n02be[
 
 print(outliers[["datum", "demand"]])
 print("Number of outliers:", len(outliers))
+
+n02be[["datum", "demand"]].to_csv(
+    "data/processed/n02be_daily.csv",
+    index=False
+)
