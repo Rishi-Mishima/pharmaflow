@@ -39,6 +39,11 @@ df["day_of_week"] = df["datum"].dt.dayofweek
 df["month"] = df["datum"].dt.month
 df["day_of_year"] = df["datum"].dt.dayofyear
 
+## add is_weekend
+df["is_weekend"] = (
+    df["datum"].dt.dayofweek >= 5
+).astype(int)
+
 print("Missing values before dropna:")
 print(df.isna().sum())
 

@@ -47,7 +47,9 @@ FEATURES = [
     "day_of_week",
     "month",
     "day_of_year",
+    "is_weekend",
 ]
+
 
 
 X_train = train_df[FEATURES]
@@ -154,3 +156,96 @@ plt.legend()
 
 plt.tight_layout()
 plt.show()
+
+
+# ---------------- Residual -----------------------
+# Residual analysis
+test_df = test_df.copy()
+
+test_df["xgb_pred"] = xgb_pred
+test_df["residual"] = test_df["demand"] - test_df["xgb_pred"]
+test_df["abs_error"] = test_df["residual"].abs()
+
+# Find worst predictions
+worst_errors = test_df.nlargest(
+    10,
+    "abs_error"
+)[
+    ["datum", "demand", "xgb_pred", "residual", "abs_error"]
+    ]
+
+print("\nWorst XGBoost Prediction Errors:")
+print(worst_errors)
+
+# Inspect suspicious periods
+
+columns = [
+    "datum",
+    "demand",
+    "lag_1",
+    "lag_7",
+    "rolling_mean_7",
+    "day_of_week",
+    "month",
+]
+
+print("\nDecember anomaly:")
+print(
+    df[
+        (df["datum"] >= "2018-12-01") &
+        (df["datum"] <= "2018-12-25")
+    ][columns]
+)
+
+print("\nJanuary peak:")
+print(
+    df[
+        (df["datum"] >= "2019-01-10") &
+        (df["datum"] <= "2019-02-05")
+    ][columns]
+)
+
+print("\nTarget distribution:")
+
+print("Train demand:")
+print(train_df["demand"].describe())
+
+print("\nTest demand:")
+print(test_df["demand"].describe())
+
+print("\nMaximum values:")
+print("Train max:", train_df["demand"].max())
+print("Test max:", test_df["demand"].max())
+
+
+print("\nHigh-demand days:")
+
+print(
+    "Train > 70:",
+    (train_df["demand"] > 70).sum()
+)
+
+print(
+    "Test > 70:",
+    (test_df["demand"] > 70).sum()
+)
+
+
+print("\nHigh-demand days in training set:")
+
+high_demand_train = train_df[
+    train_df["demand"] > 70
+][
+    [
+        "datum",
+        "demand",
+        "lag_1",
+        "lag_7",
+        "rolling_mean_7",
+        "day_of_week",
+        "month",
+    ]
+]
+
+print(high_demand_train.to_string(index=False))
+
