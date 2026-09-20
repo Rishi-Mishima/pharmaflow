@@ -1,37 +1,11 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 import joblib
 import pandas as pd
-
+from app.schemas import PredictionInput
+from app.services.forecast_service import make_prediction
+from app.model.model_loader import model, features, metrics
 app = FastAPI()
 
-model_artifact = joblib.load("models/demand_forecast_lr.pkl")
-
-
-model = model_artifact["model"]
-features = model_artifact["features"]
-metrics = model_artifact["metrics"]
-
-
-class PredictionInput(BaseModel):
-    lag_1: float
-    lag_7: float
-    lag_14: float
-    lag_28: float
-
-    rolling_mean_7: float
-    rolling_mean_28: float
-
-    dow_sin: float
-    dow_cos: float
-
-    month_sin: float
-    month_cos: float
-
-    doy_sin: float
-    doy_cos: float
-
-    is_weekend: int
 
 @app.get("/model/info")
 def model_info():
@@ -44,16 +18,14 @@ def model_info():
 
 @app.post("/predict")
 def predict(data: PredictionInput):
-    input_data = pd.DataFrame(
-        [data.model_dump()]
+    prediction = make_prediction(
+        data,
+        model,
+        features
     )
 
-    input_data = input_data[features]
-
-    prediction = model.predict(input_data)
-
     return {
-        "prediction": float(prediction[0])
+        "prediction": prediction
     }
 
 @app.get("/health")
