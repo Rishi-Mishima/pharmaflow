@@ -5,7 +5,9 @@ from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor
 import matplotlib.pyplot as plt
 from sklearn.model_selection import TimeSeriesSplit
-
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import joblib
+import os
 
 df = pd.read_csv(
     "data/processed/n02be_features.csv",
@@ -430,3 +432,111 @@ for params in param_grid:
         "Mean MAE:",
         round(np.mean(fold_maes), 3)
     )
+
+
+ ## -------- Final Evaluation
+LR_FEATURES = [
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "lag_28",
+    "rolling_mean_7",
+    "rolling_mean_28",
+    "dow_sin",
+    "dow_cos",
+    "month_sin",
+    "month_cos",
+    "doy_sin",
+    "doy_cos",
+    "is_weekend",
+]
+
+split_index = int(len(df) * 0.8)
+
+train_df = df.iloc[:split_index].copy()
+test_df = df.iloc[split_index:].copy()
+
+X_train = train_df[LR_FEATURES]
+y_train = train_df["demand"]
+
+X_test = test_df[LR_FEATURES]
+y_test = test_df["demand"]
+
+# train final LR
+final_model = LinearRegression()
+
+final_model.fit(X_train, y_train)
+
+final_pred = final_model.predict(X_test)
+
+## 计算 MAE + RMSE + WAPE
+mae = mean_absolute_error(y_test, final_pred)
+
+rmse = np.sqrt(
+    mean_squared_error(y_test, final_pred)
+)
+
+wape = (
+    np.sum(np.abs(y_test - final_pred))
+    / np.sum(np.abs(y_test))
+) * 100
+
+print("\nFinal Linear Regression Evaluation")
+print(f"MAE:  {mae:.3f}")
+print(f"RMSE: {rmse:.3f}")
+print(f"WAPE: {wape:.2f}%")
+
+
+## fianl estimation plot
+plt.figure(figsize=(14, 6))
+
+plt.plot(
+    test_df["datum"],
+    y_test,
+    label="Actual"
+)
+
+plt.plot(
+    test_df["datum"],
+    final_pred,
+    label="Linear Regression"
+)
+
+plt.xlabel("Date")
+plt.ylabel("Demand")
+plt.title("Final Demand Forecast: Actual vs Predicted")
+plt.legend()
+plt.tight_layout()
+
+plt.show()
+
+# ==========================================
+# Save final model
+# ==========================================
+
+# Create the models folder if it does not exist
+os.makedirs("models", exist_ok=True)
+
+
+# Store the model together with useful information
+model_artifact = {
+    "model": final_model,
+
+    "features": LR_FEATURES,
+
+    "metrics": {
+        "mae": mae,
+        "rmse": rmse,
+        "wape": wape,
+        "cv_mae": 9.229
+    }
+}
+
+# Save everything into one file
+joblib.dump(
+    model_artifact,
+    "models/demand_forecast_lr.pkl"
+)
+
+print("\nModel saved successfully:")
+print("models/demand_forecast_lr.pkl")
