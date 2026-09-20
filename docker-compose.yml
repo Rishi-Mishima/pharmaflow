@@ -1,0 +1,15 @@
+services:
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: pharmaml
+      POSTGRES_USER: pharmaml
+      POSTGRES_PASSWORD: pharmaml
+    ports:
+      - "5432:5432"

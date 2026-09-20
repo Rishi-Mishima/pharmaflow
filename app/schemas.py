@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-
+from datetime import date
 
 class PredictionInput(BaseModel):
     lag_1: float
@@ -20,3 +20,27 @@ class PredictionInput(BaseModel):
     doy_cos: float
 
     is_weekend: int
+
+class DrugCreate(BaseModel):
+    code: str
+    name: str
+
+
+class DrugResponse(BaseModel):
+    id: int
+    code: str
+    name: str
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class DemandHistoryResponse(BaseModel):
+    id: int
+    drug_id: int
+    date: date
+    demand: float
+
+    model_config = {
+        "from_attributes": True
+    }

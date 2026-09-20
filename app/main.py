@@ -4,7 +4,17 @@ import pandas as pd
 from app.schemas import PredictionInput
 from app.services.forecast_service import make_prediction
 from app.model.model_loader import model, features, metrics
+
+from app.database import engine, Base
+from app import models
+from app.api.drugs import router as drugs_router
+
+
 app = FastAPI()
+
+app.include_router(drugs_router)
+
+Base.metadata.create_all(bind=engine)
 
 
 @app.get("/model/info")
