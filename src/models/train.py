@@ -104,6 +104,37 @@ xgb_model.fit(X_train, y_train)
 # Predict
 xgb_pred = xgb_model.predict(X_test)
 
+## feature importance
+feature_importance = pd.DataFrame({
+    "feature": FEATURES,
+    "importance": xgb_model.feature_importances_,
+})
+
+feature_importance = feature_importance.sort_values(
+    "importance",
+    ascending=False
+)
+
+print("\nXGBoost Feature Importance:")
+print(feature_importance)
+
+## plot
+plt.figure(figsize=(10, 6))
+
+plt.barh(
+    feature_importance["feature"],
+    feature_importance["importance"]
+)
+
+plt.xlabel("Importance")
+plt.ylabel("Feature")
+plt.title("XGBoost Feature Importance")
+
+plt.gca().invert_yaxis()
+
+plt.tight_layout()
+plt.show()
+
 # Evaluate
 xgb_mae = mean_absolute_error(
     y_test,
