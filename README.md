@@ -1,115 +1,90 @@
+# PharmaML
 
+PharmaML is a machine learning project for pharmaceutical demand forecasting using historical demand data.
 
-# PharmaML – Pharmaceutical Demand Forecasting
+The project combines time-series feature engineering, model evaluation, and a FastAPI backend for serving predictions through a REST API.
 
-## Overview
-A machine learning project for forecasting daily pharmaceutical demand
-using historical demand patterns and calendar-based features.
+## Features
 
-## Project Goals
-- Forecast daily pharmaceutical demand
-- Compare simple baselines with machine learning models
-- Evaluate models using time-aware validation
-- Build a reproducible forecasting pipeline
+- Pharmaceutical demand forecasting
+- Time-series feature engineering
+- Lag and rolling-window features
+- Cyclical calendar features
+- Linear Regression and XGBoost comparison
+- Time-series cross-validation
+- REST API built with FastAPI
+- Saved model inference using Joblib
 
-## Dataset
-Briefly describe:
-- what the dataset contains
-- target variable: `demand`
-- date variable: `datum`
+## Model
 
-## Exploratory Data Analysis
-Briefly describe:
-- demand distribution
-- weekly patterns
-- seasonal patterns
-- unusual zero-demand observations
-- demand spikes
+The forecasting model uses historical demand and calendar-based features, including:
 
-## Feature Engineering
+- Lag features: 1, 7, 14, and 28 days
+- Rolling mean: 7 and 28 days
+- Day-of-week seasonality
+- Monthly seasonality
+- Annual seasonality
+- Weekend indicator
 
-### Lag Features
-- lag_1
-- lag_7
-- lag_14
-- lag_28
+Linear Regression was selected as the final model based on time-series cross-validation performance.
 
-### Rolling Features
-- rolling_mean_7
-- rolling_mean_28
-
-Rolling features are shifted by one day to prevent target leakage.
-
-### Calendar Features
-- day of week
-- month
-- day of year
-- weekend indicator
-
-Cyclical sine/cosine encoding was also evaluated for the
-Linear Regression model.
-
-## Models
-
-Three approaches were evaluated:
-
-1. Naive weekly baseline
-2. Linear Regression
-3. XGBoost
-
-## Validation Strategy
-
-A chronological train/test split was used instead of random splitting
-to preserve the temporal structure of the forecasting problem.
-
-Five-fold time-series cross-validation was additionally used for
-model comparison.
-
-## Model Comparison
-
-| Model | CV MAE |
-|---|---:|
-| Linear Regression | 9.229 |
-| Tuned XGBoost | 9.559 |
-
-Although XGBoost performed competitively, Linear Regression showed
-better average generalization across chronological validation windows.
-
-## Final Model
-
-Linear Regression was selected as the final model.
-
-Holdout performance:
+### Model Performance
 
 | Metric | Result |
 |---|---:|
-| MAE | 9.456 |
-| RMSE | 12.299 |
-| WAPE | 30.86% |
+| Cross-validation MAE | 9.229 |
+| Test MAE | 9.456 |
+| Test RMSE | 12.299 |
+| Test WAPE | 30.86% |
 
-Compared with the naive weekly baseline (MAE = 12.261), the final
-model reduced holdout MAE by approximately 22.9%.
+## API
 
-## Error Analysis
+The trained model is served through a FastAPI REST API.
 
-The model captures the overall demand trend but tends to underestimate
-sudden demand spikes.
+Available endpoints:
 
-Several zero-demand observations were also identified and retained
-because their underlying cause could not be verified.
+- `GET /` — API status
+- `GET /health` — health check
+- `GET /model/info` — model metadata and evaluation metrics
+- `POST /predict` — generate a demand prediction
 
-## Project Structure
+## Run Locally
 
-```text
+Create and activate a Python virtual environment, then install the dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+
+### Start the API: 
+```bash 
+uvicorn app.main:app --reload
+```
+
+Open the interactive API documentation: [Port](http://127.0.0.1:8000/docs)
+
+## Project Structure 
+```
 PharmaML/
+├── app/
+│   └── main.py
 ├── data/
+│   ├── raw/
+│   └── processed/
 ├── models/
 │   └── demand_forecast_lr.pkl
 ├── src/
-│   ├── data/
-│   │  └── explore_data.py
-│   ├── features/
-│   │  └── build_features.py
-│   └── models/
-│       └── train.py
+│   └── train.py
+├── requirements.txt
 └── README.md
+```
+
+### Planned Improvements
+- PostgreSQL for historical demand and forecast persistence
+- Redis caching
+- Service and repository architecture
+- Automated tests with pytest
+- Docker containerization
+- GitHub Actions CI
+- React forecasting dashboard
