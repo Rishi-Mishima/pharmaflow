@@ -1,8 +1,10 @@
+import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
 from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor
 import matplotlib.pyplot as plt
+from sklearn.model_selection import TimeSeriesSplit
 
 
 df = pd.read_csv(
@@ -44,9 +46,14 @@ FEATURES = [
     "lag_28",
     "rolling_mean_7",
     "rolling_mean_28",
-    "day_of_week",
-    "month",
-    "day_of_year",
+
+    "dow_sin",
+    "dow_cos",
+    "month_sin",
+    "month_cos",
+    "doy_sin",
+    "doy_cos",
+
     "is_weekend",
 ]
 
@@ -280,3 +287,146 @@ high_demand_train = train_df[
 
 print(high_demand_train.to_string(index=False))
 
+
+## --------- Time Series Validation
+# Time-series cross-validation
+tscv = TimeSeriesSplit(n_splits=5)
+
+lr_cv_mae = []
+xgb_cv_mae = []
+
+X = df[FEATURES]
+y = df["demand"]
+
+for fold, (train_index, val_index) in enumerate(tscv.split(X), start=1):
+
+    X_train_cv = X.iloc[train_index]
+    X_val_cv = X.iloc[val_index]
+
+    y_train_cv = y.iloc[train_index]
+    y_val_cv = y.iloc[val_index]
+
+    # Linear Regression
+    lr_cv = LinearRegression()
+    lr_cv.fit(X_train_cv, y_train_cv)
+
+    lr_pred_cv = lr_cv.predict(X_val_cv)
+
+    lr_mae_fold = mean_absolute_error(
+        y_val_cv,
+        lr_pred_cv
+    )
+
+    # XGBoost
+    xgb_cv = XGBRegressor(
+        n_estimators=300,
+        learning_rate=0.05,
+        max_depth=4,
+        random_state=42
+    )
+
+    xgb_cv.fit(X_train_cv, y_train_cv)
+
+    xgb_pred_cv = xgb_cv.predict(X_val_cv)
+
+    xgb_mae_fold = mean_absolute_error(
+        y_val_cv,
+        xgb_pred_cv
+    )
+
+    lr_cv_mae.append(lr_mae_fold)
+    xgb_cv_mae.append(xgb_mae_fold)
+
+print(
+        f"Fold {fold}: "
+        f"LR MAE = {lr_mae_fold:.3f}, "
+        f"XGB MAE = {xgb_mae_fold:.3f}"
+    )
+
+print("\nTime-Series Cross-Validation Results")
+
+print(
+        f"Linear Regression Mean MAE: "
+        f"{np.mean(lr_cv_mae):.3f}"
+    )
+
+print(
+        f"XGBoost Mean MAE: "
+        f"{np.mean(xgb_cv_mae):.3f}"
+    )
+
+
+## -------------- XGBoost hyperparameter tuning
+
+XGB_FEATURES = [
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "lag_28",
+    "rolling_mean_7",
+    "rolling_mean_28",
+    "day_of_week",
+    "month",
+    "day_of_year",
+    "is_weekend",
+]
+
+param_grid = [
+    {
+        "n_estimators": 200,
+        "max_depth": 3,
+        "learning_rate": 0.05
+    },
+    {
+        "n_estimators": 300,
+        "max_depth": 3,
+        "learning_rate": 0.03
+    },
+    {
+        "n_estimators": 300,
+        "max_depth": 4,
+        "learning_rate": 0.05
+    },
+    {
+        "n_estimators": 500,
+        "max_depth": 3,
+        "learning_rate": 0.02
+    }
+]
+
+X_xgb = df[XGB_FEATURES]
+y = df["demand"]
+
+for params in param_grid:
+
+    fold_maes = []
+
+    for train_index, val_index in tscv.split(X_xgb):
+
+        X_train_cv = X_xgb.iloc[train_index]
+        X_val_cv = X_xgb.iloc[val_index]
+
+        y_train_cv = y.iloc[train_index]
+        y_val_cv = y.iloc[val_index]
+
+        model = XGBRegressor(
+            **params,
+            random_state=42
+        )
+
+        model.fit(X_train_cv, y_train_cv)
+
+        pred = model.predict(X_val_cv)
+
+        mae = mean_absolute_error(
+            y_val_cv,
+            pred
+        )
+
+        fold_maes.append(mae)
+
+    print(
+        params,
+        "Mean MAE:",
+        round(np.mean(fold_maes), 3)
+    )
