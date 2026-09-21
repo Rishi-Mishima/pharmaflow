@@ -44,3 +44,20 @@ class DemandHistoryResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class InventoryCreate(BaseModel):
+    drug_id: int
+    current_stock: float
+    safety_stock: float
+    lead_time_days: int = 7
+
+class InventoryResponse(BaseModel):
+    id: int
+    drug_id: int
+    current_stock: float
+    safety_stock: float
+    lead_time_days: int
+
+    model_config = {
+        "from_attributes": True
+    }

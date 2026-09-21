@@ -8,11 +8,14 @@ from app.model.model_loader import model, features, metrics
 from app.database import engine, Base
 from app import models
 from app.api.drugs import router as drugs_router
+from app.api.inventory import router as inventory_router
 
 
 app = FastAPI()
 
 app.include_router(drugs_router)
+app.include_router(drugs_router)
+app.include_router(inventory_router)
 
 Base.metadata.create_all(bind=engine)
 

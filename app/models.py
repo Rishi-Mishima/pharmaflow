@@ -33,3 +33,22 @@ class DemandHistory(Base):
     )
 
     demand: Mapped[float] = mapped_column(Float)
+
+
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    drug_id: Mapped[int] = mapped_column(
+        ForeignKey("drugs.id"),
+        unique=True,
+        index=True
+    )
+
+    current_stock: Mapped[float] = mapped_column(Float)
+
+    safety_stock: Mapped[float] = mapped_column(Float)
+
+    lead_time_days: Mapped[int] = mapped_column(default=7)
